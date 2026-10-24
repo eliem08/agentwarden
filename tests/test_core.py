@@ -8,8 +8,12 @@ from agent_okta import Directory, TokenError
 class Tests(unittest.TestCase):
     def setUp(self):
         self.d = Directory(secret="s3cret")
-        self.d.add_role("support", allow=["read:crm/*", "spend:stripe/*"], deny=["read:crm/payroll*"],
-                        spend_limits={"spend:stripe/*": 50})
+        self.d.add_role(
+            "support",
+            allow=["read:crm/*", "spend:stripe/*"],
+            deny=["read:crm/payroll*"],
+            spend_limits={"spend:stripe/*": 50},
+        )
         self.d.add_agent("bot1", "alice", ["support"])
         self.tok = self.d.issue_token("bot1", ttl=60, now=1000)
 

@@ -45,14 +45,17 @@ def main(argv=None):
 
     if a.cmd == "role" and a.sub == "add":
         limits = {k: float(v) for k, v in (x.split("=", 1) for x in a.limit)}
-        d.add_role(a.name, a.allow, a.deny, limits)
+        role = d.add_role(a.name, a.allow, a.deny, limits)
+        print(f"role {role.name} saved ({len(role.rules)} rules)")
     elif a.cmd == "role":
         for r in d.roles.values():
             print(r.name, ", ".join(f"{x.effect}:{x.scope}" for x in r.rules))
     elif a.cmd == "agent" and a.sub == "add":
-        d.add_agent(a.agent_id, a.owner, a.role)
+        ag = d.add_agent(a.agent_id, a.owner, a.role)
+        print(f"agent {ag.agent_id} registered (owner {ag.owner}, roles {', '.join(ag.roles)})")
     elif a.cmd == "agent" and a.sub == "disable":
         d.disable_agent(a.agent_id)
+        print(f"agent {a.agent_id} disabled; existing tokens now fail verification")
     elif a.cmd == "agent":
         for ag in d.agents.values():
             print(f"{ag.agent_id:<20} owner={ag.owner} roles={','.join(ag.roles)}{' DISABLED' if ag.disabled else ''}")
@@ -64,6 +67,7 @@ def main(argv=None):
             return 1
     elif a.cmd == "token":
         d.revoke(a.token)
+        print("token revoked")
     elif a.cmd == "check":
         ok, reason = d.authorize(a.token, a.action, a.resource, a.amount)
         print(f"{'ALLOW' if ok else 'DENY'}  {reason}")

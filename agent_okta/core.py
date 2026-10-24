@@ -1,4 +1,5 @@
 """Agent identities, role policies, signed tokens and authorization decisions."""
+
 from __future__ import annotations
 
 import base64
@@ -9,7 +10,7 @@ import json
 import os
 import secrets
 import time
-from dataclasses import dataclass, field, asdict
+from dataclasses import asdict, dataclass, field
 
 __all__ = ["Rule", "Role", "Agent", "Directory", "TokenError"]
 
@@ -29,6 +30,7 @@ def _unb64(s: str) -> bytes:
 @dataclass
 class Rule:
     """`effect` is allow/deny; `scope` is `action:resource-glob`; optional `max_amount` for spend scopes."""
+
     effect: str
     scope: str
     max_amount: float | None = None
@@ -108,7 +110,13 @@ class Directory:
         if agent.disabled:
             raise TokenError("agent disabled")
         now = now or time.time()
-        claims = {"sub": agent_id, "roles": agent.roles, "iat": int(now), "exp": int(now + ttl), "jti": secrets.token_hex(8)}
+        claims = {
+            "sub": agent_id,
+            "roles": agent.roles,
+            "iat": int(now),
+            "exp": int(now + ttl),
+            "jti": secrets.token_hex(8),
+        }
         header = _b64(json.dumps({"alg": "HS256", "typ": "JWT"}).encode())
         body = _b64(json.dumps(claims, separators=(",", ":")).encode())
         sig = _b64(hmac.new(self.secret, f"{header}.{body}".encode(), hashlib.sha256).digest())
@@ -137,7 +145,9 @@ class Directory:
         self.revoked.add(json.loads(_unb64(body))["jti"])
 
     # authorization -----------------------------------------------------
-    def authorize(self, token: str, action: str, resource: str, amount: float | None = None, now: float | None = None) -> tuple[bool, str]:
+    def authorize(
+        self, token: str, action: str, resource: str, amount: float | None = None, now: float | None = None
+    ) -> tuple[bool, str]:
         try:
             claims = self.verify_token(token, now)
         except TokenError as e:
@@ -154,7 +164,14 @@ class Directory:
         return self._log(claims["sub"], action, resource, False, "no matching grant")
 
     def _log(self, agent, action, resource, allowed, reason):
-        entry = {"ts": time.time(), "agent": agent, "action": action, "resource": resource, "allowed": allowed, "reason": reason}
+        entry = {
+            "ts": time.time(),
+            "agent": agent,
+            "action": action,
+            "resource": resource,
+            "allowed": allowed,
+            "reason": reason,
+        }
         self.audit.append(entry)
         if self.audit_path:
             with open(self.audit_path, "a", encoding="utf-8") as fh:

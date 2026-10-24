@@ -1,5 +1,7 @@
 # agent-okta
 
+[![CI](https://github.com/eliem08/agent-okta/actions/workflows/ci.yml/badge.svg)](https://github.com/eliem08/agent-okta/actions/workflows/ci.yml)
+
 > **Okta for agents** — who each agent is and what it's allowed to touch.
 
 Every company is about to have more agents than employees. Today those
@@ -38,3 +40,25 @@ agent-okta check "$TOKEN" send email/outbox        # DENY (no matching grant)
 - Human-in-the-loop step-up approval for risky scopes
 - SCIM-style sync with your IdP (agent owners = employees)
 - Anomaly detection on the audit stream (see agent-alarm)
+
+## Development
+
+Zero runtime dependencies; Python 3.10+.
+
+```bash
+python -m venv .venv && source .venv/bin/activate   # Windows: .venv\Scripts\activate
+pip install -e ".[dev]"
+python -m unittest discover -s tests -t .           # unit + CLI smoke tests
+ruff check . && ruff format --check .               # lint + format
+```
+
+```
+agent_okta/core.py       domain logic (pure, importable, fully tested)
+agent_okta/__main__.py   CLI (`agent-okta ...` / `python -m agent_okta ...`)
+tests/                unit tests + generated CLI smoke tests
+```
+
+CI runs lint and tests on Ubuntu and Windows across Python 3.10, 3.12 and 3.13.
+Design, data model, trade-offs and production path: **[ARCHITECTURE.md](ARCHITECTURE.md)**.
+
+Part of the [agent-economy](https://github.com/eliem08/agent-economy) portfolio (idea #4).
