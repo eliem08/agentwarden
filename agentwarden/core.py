@@ -16,6 +16,9 @@ from dataclasses import asdict, dataclass, field
 __all__ = ["Rule", "Role", "Agent", "Directory", "TokenError"]
 
 
+MAX_TTL = 86_400  # one day; long-lived bearer tokens outlive the policy decisions they encode
+
+
 class TokenError(Exception):
     pass
 
@@ -60,7 +63,7 @@ class Agent:
 class Directory:
     def __init__(self, path: str | None = None, secret: str | None = None):
         self.path = path
-        self.secret = (secret or os.environ.get("AGENT_OKTA_SECRET") or self._local_secret()).encode()
+        self.secret = (secret or os.environ.get("AGENTWARDEN_SECRET") or self._local_secret()).encode()
         self.roles: dict[str, Role] = {}
         self.agents: dict[str, Agent] = {}
         self.revoked: set[str] = set()
@@ -133,6 +136,8 @@ class Directory:
         agent = self.agents[agent_id]
         if agent.disabled:
             raise TokenError("agent disabled")
+        if not 1 <= ttl <= MAX_TTL:
+            raise TokenError(f"ttl must be between 1 and {MAX_TTL} seconds")
         now = time.time() if now is None else now
         claims = {
             "sub": agent_id,
@@ -187,7 +192,11 @@ class Directory:
             return self._log(None, action, resource, False, str(e))
         if amount is not None and not (math.isfinite(amount) and amount >= 0):
             return self._log(claims["sub"], action, resource, False, f"invalid amount {amount!r}")
-        rules = [r for name in claims["roles"] if name in self.roles for r in self.roles[name].rules]
+        # the agent's *current* roles decide; the token's role list only narrows them, so a downgrade
+        # takes effect immediately instead of when the token expires
+        current = self.agents[claims["sub"]].roles
+        active = [name for name in current if name in claims["roles"]]
+        rules = [r for name in active if name in self.roles for r in self.roles[name].rules]
         for r in rules:
             if r.effect == "deny" and r.matches(action, resource):
                 return self._log(claims["sub"], action, resource, False, f"explicit deny {r.scope}")

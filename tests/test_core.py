@@ -2,7 +2,7 @@ import os
 import tempfile
 import unittest
 
-from agent_okta import Directory, TokenError
+from agentwarden import Directory, TokenError
 
 
 class Tests(unittest.TestCase):
@@ -60,7 +60,7 @@ class Tests(unittest.TestCase):
             self.d.add_role("bad", allow=["spend:*"], spend_limits={"spend:*": float("nan")})
 
     def test_no_guessable_default_secret(self):
-        old = os.environ.pop("AGENT_OKTA_SECRET", None)
+        old = os.environ.pop("AGENTWARDEN_SECRET", None)
         try:
             forger = Directory(secret="dev-secret")
             forger.add_role("r", allow=["*:*"])
@@ -77,7 +77,7 @@ class Tests(unittest.TestCase):
                 self.assertNotEqual(a.secret, b"dev-secret")
         finally:
             if old is not None:
-                os.environ["AGENT_OKTA_SECRET"] = old
+                os.environ["AGENTWARDEN_SECRET"] = old
 
     def test_malformed_tokens_are_rejected_cleanly(self):
         import base64
@@ -97,6 +97,18 @@ class Tests(unittest.TestCase):
         self.d.disable_agent("bot1")
         self.d.revoke(self.tok)
         self.assertEqual(len(self.d.revoked), 1)
+
+    def test_role_downgrade_takes_effect_on_existing_tokens(self):
+        self.assertTrue(self.d.authorize(self.tok, "spend", "stripe/charge", amount=20, now=1001)[0])
+        self.d.add_role("readonly", allow=["read:crm/*"])
+        self.d.add_agent("bot1", "alice", ["readonly"])  # admin strips the spend role
+        self.assertFalse(self.d.authorize(self.tok, "spend", "stripe/charge", amount=20, now=1001)[0])
+        self.assertFalse(self.d.authorize(self.tok, "read", "crm/tickets/1", now=1001)[0], "token cannot gain roles")
+
+    def test_token_lifetime_is_capped(self):
+        for ttl in (0, -5, 10**8):
+            with self.subTest(ttl=ttl), self.assertRaises(TokenError):
+                self.d.issue_token("bot1", ttl=ttl)
 
 
 if __name__ == "__main__":

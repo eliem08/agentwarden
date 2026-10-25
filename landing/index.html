@@ -1,0 +1,82 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>AgentWarden</title>
+<meta name="description" content="Give every AI agent an identity, a scoped role and spend limits, with an audit trail.">
+<style>
+  :root { --bg:#fbfaf7; --fg:#1c1b19; --muted:#5d5a54; --card:#ffffff; --line:#e4e0d8; --accent:#2f5d50; --accent-fg:#ffffff; --code:#f1eee8; }
+  @media (prefers-color-scheme: dark) { :root { --bg:#141412; --fg:#ecebe7; --muted:#a8a49c; --card:#1d1c1a; --line:#33312d; --accent:#7fc4ad; --accent-fg:#10201b; --code:#22211e; } }
+  * { box-sizing: border-box; }
+  body { margin:0; background:var(--bg); color:var(--fg); font:16px/1.6 system-ui,-apple-system,"Segoe UI",Roboto,sans-serif; }
+  main { max-width: 960px; margin: 0 auto; padding: 0 16px 64px; }
+  header { padding: 64px 0 40px; }
+  .brand { font-weight: 700; letter-spacing: .02em; color: var(--muted); text-transform: uppercase; font-size: 13px; }
+  h1 { font-size: clamp(30px, 5vw, 46px); line-height: 1.15; margin: 12px 0 16px; max-width: 18em; }
+  .lede { color: var(--muted); font-size: 18px; max-width: 40em; margin: 0 0 28px; }
+  .btn { display:inline-block; padding: 11px 18px; border-radius: 8px; border:1px solid var(--line); color: var(--fg); text-decoration:none; font-weight:600; }
+  .btn.primary { background: var(--accent); color: var(--accent-fg); border-color: var(--accent); }
+  .btn:focus-visible { outline: 3px solid var(--accent); outline-offset: 2px; }
+  section { padding: 32px 0; border-top: 1px solid var(--line); }
+  h2 { font-size: 22px; margin: 0 0 12px; }
+  .grid { display:grid; gap:16px; grid-template-columns: repeat(auto-fit, minmax(240px, 1fr)); }
+  .plan { background: var(--card); border:1px solid var(--line); border-radius: 12px; padding: 20px; display:flex; flex-direction:column; }
+  .plan h3 { margin:0; font-size:18px; }
+  .price { font-size: 30px; font-weight: 700; margin: 8px 0 12px; }
+  .price span { display:block; font-size: 14px; font-weight: 400; color: var(--muted); }
+  .plan ul { padding-left: 18px; margin: 0 0 20px; flex:1; }
+  pre { background: var(--code); border:1px solid var(--line); border-radius: 10px; padding: 16px; overflow-x: auto; font-size: 14px; }
+  footer { color: var(--muted); font-size: 14px; padding-top: 32px; border-top: 1px solid var(--line); }
+</style>
+</head>
+<body>
+<main>
+  <header>
+    <div class="brand">AgentWarden</div>
+    <h1>Give every AI agent an identity, a scoped role and spend limits, with an audit trail.</h1>
+    <p class="lede">Signed, expiring agent tokens; role policies where an explicit deny always wins; per-scope spend caps; and an append-only audit log.</p>
+    <a class="btn primary" href="mailto:sales@YOUR-DOMAIN.com?subject=AgentWarden%20trial">Start a 14-day free trial</a>
+  </header>
+  <section>
+    <h2>Who it's for</h2>
+    <p>Engineering and security teams putting agents into production.</p>
+    <h2>The problem</h2>
+    <p>Agents run on shared API keys with no identity, so nobody can say which agent did what or stop one from overreaching.</p>
+  </section>
+  <section>
+    <h2>Quickstart</h2>
+    <p>Python 3.10+, no other dependencies. Your release archive includes the wheel and examples.</p>
+    <pre><code>pip install agentwarden-0.1.0-py3-none-any.whl
+agentwarden --store okta.json role add support --allow read:crm/* --deny read:crm/payroll*
+agentwarden --store okta.json agent add bot1 --owner a@x.com --role support
+agentwarden --store okta.json agent list</code></pre>
+  </section>
+  <section>
+    <h2>Pricing</h2>
+    <p>Every plan starts with a 14-day free trial. Prices in USD.</p>
+    <div class="grid">
+      <article class="plan">
+        <h3>Team</h3>
+        <p class="price">$99<span>per month</span></p>
+        <ul><li>Up to 25 agents</li><li>Roles, deny rules and spend limits</li><li>Audit log</li></ul>
+        <a class="btn primary" href="mailto:sales@YOUR-DOMAIN.com?subject=AgentWarden Team">Start free trial</a>
+      </article>
+      <article class="plan">
+        <h3>Business</h3>
+        <p class="price">$499<span>per month</span></p>
+        <ul><li>Up to 250 agents</li><li>Key rotation tooling</li><li>Audit export for compliance</li></ul>
+        <a class="btn" href="mailto:sales@YOUR-DOMAIN.com?subject=AgentWarden Business">Start free trial</a>
+      </article>
+      <article class="plan">
+        <h3>Enterprise</h3>
+        <p class="price">$2,000<span>per month</span></p>
+        <ul><li>Unlimited agents</li><li>SSO and on-prem deployment</li><li>Security review support</li></ul>
+        <a class="btn" href="mailto:sales@YOUR-DOMAIN.com?subject=AgentWarden Enterprise">Start free trial</a>
+      </article>
+    </div>
+  </section>
+  <footer>&copy; 2026 AgentWarden. All rights reserved. Questions: <a href="mailto:sales@YOUR-DOMAIN.com">sales@YOUR-DOMAIN.com</a></footer>
+</main>
+</body>
+</html>

@@ -16,8 +16,8 @@ def _finite_float(s: str) -> float:
 
 
 def _run(argv=None):
-    ap = argparse.ArgumentParser(prog="agent-okta", description="Identity and access for AI agents.")
-    ap.add_argument("--store", default=os.environ.get("AGENT_OKTA_STORE", "agent-okta.json"))
+    ap = argparse.ArgumentParser(prog="agentwarden", description="Identity and access for AI agents.")
+    ap.add_argument("--store", default=os.environ.get("AGENTWARDEN_STORE", "agentwarden.json"))
     sub = ap.add_subparsers(dest="cmd", required=True)
 
     role = sub.add_parser("role").add_subparsers(dest="sub", required=True)

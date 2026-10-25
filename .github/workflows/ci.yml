@@ -33,4 +33,4 @@ jobs:
       - name: Test
         run: python -m unittest discover -s tests -t . -v
       - name: CLI entry point
-        run: agent-okta --help
+        run: agentwarden --help

@@ -1,4 +1,4 @@
-# Architecture — agent-okta
+# Architecture — agentwarden
 
 ## 1. Scope
 Identity, credentials and least-privilege authorization for AI agents, with an audit trail.

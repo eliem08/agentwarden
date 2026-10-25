@@ -1,15 +1,45 @@
-# agent-okta
+<!-- sell-kit:start -->
+# AgentWarden
 
-[![CI](https://github.com/eliem08/agent-okta/actions/workflows/ci.yml/badge.svg)](https://github.com/eliem08/agent-okta/actions/workflows/ci.yml)
+[![CI](https://github.com/eliem08/agentwarden/actions/workflows/ci.yml/badge.svg)](https://github.com/eliem08/agentwarden/actions/workflows/ci.yml)
 
-> **Okta for agents** — who each agent is and what it's allowed to touch.
+> **Give every AI agent an identity, a scoped role and spend limits, with an audit trail.**
 
-Every company is about to have more agents than employees. Today those
-agents share one API key with god-mode access. `agent-okta` gives each agent
-an identity, short-lived signed credentials and least-privilege policies —
-with a full audit trail.
+**Who it's for:** Engineering and security teams putting agents into production.
 
-## What the MVP does
+**The problem:** Agents run on shared API keys with no identity, so nobody can say which agent did what or stop one from overreaching.
+
+**What you get:** Signed, expiring agent tokens; role policies where an explicit deny always wins; per-scope spend caps; and an append-only audit log.
+
+## Quickstart
+
+Customers receive a release archive with the wheel and the examples. Python 3.10+ and no other dependencies.
+
+```bash
+pip install agentwarden-0.1.0-py3-none-any.whl
+agentwarden --store okta.json role add support --allow read:crm/* --deny read:crm/payroll*
+agentwarden --store okta.json agent add bot1 --owner a@x.com --role support
+agentwarden --store okta.json agent list
+```
+
+## Pricing
+
+Every plan starts with a 14-day free trial. Prices in USD, billed monthly unless noted.
+
+| Plan | Price | Includes |
+|---|---|---|
+| **Team** | $99 per month | Up to 25 agents; Roles, deny rules and spend limits; Audit log |
+| **Business** | $499 per month | Up to 250 agents; Key rotation tooling; Audit export for compliance |
+| **Enterprise** | $2,000 per month | Unlimited agents; SSO and on-prem deployment; Security review support |
+
+To start a trial or buy a plan, email **sales@YOUR-DOMAIN.com**.
+
+## Licence
+
+Proprietary. Copyright (c) 2026 eliem08. All rights reserved. Use requires a paid plan or an active trial; see [LICENSE](LICENSE).
+<!-- sell-kit:end -->
+
+## What it does
 
 - **Agent registry** — register agents with an owner, description and roles
 - **Policies** — roles grant `action:resource` scopes with glob patterns
@@ -19,22 +49,22 @@ with a full audit trail.
   (no external deps); revocation list
 - **Authorization** — `authorize(token, action, resource, context)` → allow/deny + reason
 - **Audit log** — every decision appended as JSONL
-- File-backed store (`agent-okta.json`) so the CLI is stateful
-- No guessable default key: tokens are signed with `AGENT_OKTA_SECRET` or a random per-store key
+- File-backed store (`agentwarden.json`) so the CLI is stateful
+- No guessable default key: tokens are signed with `AGENTWARDEN_SECRET` or a random per-store key
 - Spend checks reject `nan`, `inf` and negative amounts, so a limit cannot be slipped
 
 ## Quickstart
 
 ```bash
 pip install -e .
-# optional: without it, a random signing key is created once at agent-okta.json.secret (keep that file private)
-export AGENT_OKTA_SECRET="$(python -c 'import secrets; print(secrets.token_hex(32))')"
-agent-okta role add support-bot --allow "read:crm/*" --allow "write:email/drafts" --deny "read:crm/payroll*"
-agent-okta agent add helpdesk-1 --owner alice@acme.com --role support-bot
-TOKEN=$(agent-okta token issue helpdesk-1 --ttl 900)
-agent-okta check "$TOKEN" read crm/tickets/42      # ALLOW
-agent-okta check "$TOKEN" read crm/payroll/2026    # DENY (explicit deny)
-agent-okta check "$TOKEN" send email/outbox        # DENY (no matching grant)
+# optional: without it, a random signing key is created once at agentwarden.json.secret (keep that file private)
+export AGENTWARDEN_SECRET="$(python -c 'import secrets; print(secrets.token_hex(32))')"
+agentwarden role add support-bot --allow "read:crm/*" --allow "write:email/drafts" --deny "read:crm/payroll*"
+agentwarden agent add helpdesk-1 --owner alice@acme.com --role support-bot
+TOKEN=$(agentwarden token issue helpdesk-1 --ttl 900)
+agentwarden check "$TOKEN" read crm/tickets/42      # ALLOW
+agentwarden check "$TOKEN" read crm/payroll/2026    # DENY (explicit deny)
+agentwarden check "$TOKEN" send email/outbox        # DENY (no matching grant)
 ```
 
 ## Roadmap
@@ -56,8 +86,8 @@ ruff check . && ruff format --check .               # lint + format
 ```
 
 ```
-agent_okta/core.py       domain logic (pure, importable, fully tested)
-agent_okta/__main__.py   CLI (`agent-okta ...` / `python -m agent_okta ...`)
+agentwarden/core.py       domain logic (pure, importable, fully tested)
+agentwarden/__main__.py   CLI (`agentwarden ...` / `python -m agentwarden ...`)
 tests/                unit tests + generated CLI smoke tests
 ```
 

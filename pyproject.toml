@@ -3,31 +3,32 @@ requires = ["setuptools>=68"]
 build-backend = "setuptools.build_meta"
 
 [project]
-name = "agent-okta"
+name = "agentwarden"
 version = "0.1.0"
-description = "Okta for agents: who each agent is and what it is allowed to touch"
+description = "Give every AI agent an identity, a scoped role and spend limits, with an audit trail."
 readme = "README.md"
 requires-python = ">=3.10"
-license = { text = "MIT" }
+license = { text = "Proprietary" }
 authors = [{ name = "eliem08" }]
 dependencies = []
 classifiers = [
   "Programming Language :: Python :: 3",
-  "License :: OSI Approved :: MIT License",
+  "License :: Other/Proprietary License",
   "Operating System :: OS Independent",
+  "Private :: Do Not Upload",
 ]
 
 [project.optional-dependencies]
 dev = ["ruff>=0.6"]
 
 [project.scripts]
-agent-okta = "agent_okta.__main__:main"
+agentwarden = "agentwarden.__main__:main"
 
 [project.urls]
-Repository = "https://github.com/eliem08/agent-okta"
+Repository = "https://github.com/eliem08/agentwarden"
 
 [tool.setuptools]
-packages = ["agent_okta"]
+packages = ["agentwarden"]
 
 [tool.ruff]
 line-length = 120
@@ -38,5 +39,5 @@ select = ["E", "F", "W", "B", "UP", "I", "SIM", "RUF"]
 ignore = ["E501", "E741", "SIM108", "RUF001", "RUF002", "RUF003", "RUF022", "B905"]  # E501: ruff format owns line length
 
 [tool.ruff.lint.per-file-ignores]
-"agent_okta/__init__.py" = ["F401", "F403"]
+"agentwarden/__init__.py" = ["F401", "F403"]
 "tests/*" = ["E501"]
