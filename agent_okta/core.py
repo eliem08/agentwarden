@@ -7,6 +7,7 @@ import fnmatch
 import hashlib
 import hmac
 import json
+import math
 import os
 import secrets
 import time
@@ -59,7 +60,7 @@ class Agent:
 class Directory:
     def __init__(self, path: str | None = None, secret: str | None = None):
         self.path = path
-        self.secret = (secret or os.environ.get("AGENT_OKTA_SECRET") or "dev-secret").encode()
+        self.secret = (secret or os.environ.get("AGENT_OKTA_SECRET") or self._local_secret()).encode()
         self.roles: dict[str, Role] = {}
         self.agents: dict[str, Agent] = {}
         self.revoked: set[str] = set()
@@ -68,10 +69,30 @@ class Directory:
         if path and os.path.exists(path):
             self._load()
 
+    def _local_secret(self) -> str:
+        """No configured secret: never fall back to a guessable constant.
+
+        With a store, mint a random secret once and keep it beside the store (owner-only where the OS allows);
+        without one, use a per-process secret so tokens die with the process.
+        """
+        if not self.path:
+            return secrets.token_hex(32)
+        key_path = self.path + ".secret"
+        if os.path.exists(key_path):
+            with open(key_path, encoding="utf-8") as fh:
+                return fh.read().strip()
+        key = secrets.token_hex(32)
+        fd = os.open(key_path, os.O_WRONLY | os.O_CREAT | os.O_EXCL, 0o600)
+        with os.fdopen(fd, "w", encoding="utf-8") as fh:
+            fh.write(key)
+        return key
+
     # persistence -------------------------------------------------------
     def _load(self):
-        with open(self.path, encoding="utf-8") as fh:
+        with open(self.path, encoding="utf-8-sig") as fh:
             d = json.load(fh)
+        if not isinstance(d, dict):
+            raise ValueError(f"{self.path}: expected a JSON object with roles/agents/revoked")
         self.roles = {n: Role(n, [Rule(**r) for r in rules]) for n, rules in d.get("roles", {}).items()}
         self.agents = {a["agent_id"]: Agent(**a) for a in d.get("agents", [])}
         self.revoked = set(d.get("revoked", []))
@@ -90,6 +111,9 @@ class Directory:
     # admin -------------------------------------------------------------
     def add_role(self, name: str, allow=(), deny=(), spend_limits: dict | None = None) -> Role:
         spend_limits = spend_limits or {}
+        for scope, limit in spend_limits.items():
+            if not (isinstance(limit, (int, float)) and math.isfinite(limit) and limit >= 0):
+                raise ValueError(f"spend limit for {scope} must be a finite number >= 0, got {limit!r}")
         rules = [Rule("allow", s, spend_limits.get(s)) for s in allow] + [Rule("deny", s) for s in deny]
         self.roles[name] = Role(name, rules)
         return self.roles[name]
@@ -109,7 +133,7 @@ class Directory:
         agent = self.agents[agent_id]
         if agent.disabled:
             raise TokenError("agent disabled")
-        now = now or time.time()
+        now = time.time() if now is None else now
         claims = {
             "sub": agent_id,
             "roles": agent.roles,
@@ -122,7 +146,8 @@ class Directory:
         sig = _b64(hmac.new(self.secret, f"{header}.{body}".encode(), hashlib.sha256).digest())
         return f"{header}.{body}.{sig}"
 
-    def verify_token(self, token: str, now: float | None = None) -> dict:
+    def _claims(self, token: str) -> dict:
+        """Signature-checked claims; raises TokenError for anything this directory did not sign."""
         try:
             header, body, sig = token.split(".")
         except ValueError:
@@ -130,8 +155,16 @@ class Directory:
         expected = _b64(hmac.new(self.secret, f"{header}.{body}".encode(), hashlib.sha256).digest())
         if not hmac.compare_digest(sig, expected):
             raise TokenError("bad signature")
-        claims = json.loads(_unb64(body))
-        if (now or time.time()) >= claims["exp"]:
+        try:
+            claims = json.loads(_unb64(body))
+            claims["exp"], claims["jti"], claims["sub"], claims["roles"]
+        except (ValueError, TypeError, KeyError):
+            raise TokenError("malformed token") from None
+        return claims
+
+    def verify_token(self, token: str, now: float | None = None) -> dict:
+        claims = self._claims(token)
+        if (time.time() if now is None else now) >= claims["exp"]:
             raise TokenError("token expired")
         if claims["jti"] in self.revoked:
             raise TokenError("token revoked")
@@ -141,8 +174,8 @@ class Directory:
         return claims
 
     def revoke(self, token: str):
-        _, body, _ = token.split(".")
-        self.revoked.add(json.loads(_unb64(body))["jti"])
+        """Only a token this directory signed can be revoked, so junk cannot fill the revocation list."""
+        self.revoked.add(self._claims(token)["jti"])
 
     # authorization -----------------------------------------------------
     def authorize(
@@ -152,6 +185,8 @@ class Directory:
             claims = self.verify_token(token, now)
         except TokenError as e:
             return self._log(None, action, resource, False, str(e))
+        if amount is not None and not (math.isfinite(amount) and amount >= 0):
+            return self._log(claims["sub"], action, resource, False, f"invalid amount {amount!r}")
         rules = [r for name in claims["roles"] if name in self.roles for r in self.roles[name].rules]
         for r in rules:
             if r.effect == "deny" and r.matches(action, resource):

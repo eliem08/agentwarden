@@ -1,11 +1,21 @@
 import argparse
+import csv
+import math
 import os
 import sys
 
 from .core import Directory, TokenError
 
 
-def main(argv=None):
+def _finite_float(s: str) -> float:
+    """argparse type: a float that is not nan/inf, so limits and prices cannot be bypassed."""
+    v = float(s)
+    if not math.isfinite(v):
+        raise argparse.ArgumentTypeError(f"must be a finite number, got {s!r}")
+    return v
+
+
+def _run(argv=None):
     ap = argparse.ArgumentParser(prog="agent-okta", description="Identity and access for AI agents.")
     ap.add_argument("--store", default=os.environ.get("AGENT_OKTA_STORE", "agent-okta.json"))
     sub = ap.add_subparsers(dest="cmd", required=True)
@@ -38,7 +48,7 @@ def main(argv=None):
     ck.add_argument("token")
     ck.add_argument("action")
     ck.add_argument("resource")
-    ck.add_argument("--amount", type=float)
+    ck.add_argument("--amount", type=_finite_float)
 
     a = ap.parse_args(argv)
     d = Directory(a.store)
@@ -66,7 +76,11 @@ def main(argv=None):
             print(f"error: {e}", file=sys.stderr)
             return 1
     elif a.cmd == "token":
-        d.revoke(a.token)
+        try:
+            d.revoke(a.token)
+        except TokenError as e:
+            print(f"error: {e}", file=sys.stderr)
+            return 2
         print("token revoked")
     elif a.cmd == "check":
         ok, reason = d.authorize(a.token, a.action, a.resource, a.amount)
@@ -75,6 +89,23 @@ def main(argv=None):
         return 0 if ok else 2
     d.save()
     return 0
+
+
+def main(argv=None):
+    """Run the CLI; a bad input file or argument exits 2 with a one-line error instead of a traceback.
+
+    Set AGENT_ECONOMY_DEBUG=1 to see the full traceback.
+    """
+    if hasattr(sys.stdout, "reconfigure"):
+        sys.stdout.reconfigure(errors="replace")
+    try:
+        return _run(argv)
+    except (OSError, ValueError, KeyError, csv.Error) as e:
+        if os.environ.get("AGENT_ECONOMY_DEBUG"):
+            raise
+        msg = e.args[0] if isinstance(e, KeyError) and e.args else e
+        print(f"error: {msg}", file=sys.stderr)
+        return 2
 
 
 if __name__ == "__main__":

@@ -50,6 +50,54 @@ class Tests(unittest.TestCase):
             self.assertTrue(d2.authorize(t, "read", "anything")[0])
             self.assertTrue(os.path.exists(p + ".audit.jsonl"))
 
+    def test_spend_limit_cannot_be_bypassed_with_nan_inf_or_negative(self):
+        for amount in (float("nan"), float("inf"), -500):
+            with self.subTest(amount=amount):
+                ok, reason = self.d.authorize(self.tok, "spend", "stripe/charge", amount=amount, now=1001)
+                self.assertFalse(ok)
+                self.assertIn("invalid amount", reason)
+        with self.assertRaises(ValueError):
+            self.d.add_role("bad", allow=["spend:*"], spend_limits={"spend:*": float("nan")})
+
+    def test_no_guessable_default_secret(self):
+        old = os.environ.pop("AGENT_OKTA_SECRET", None)
+        try:
+            forger = Directory(secret="dev-secret")
+            forger.add_role("r", allow=["*:*"])
+            forger.add_agent("bot1", "x", ["r"])
+            forged = forger.issue_token("bot1")
+            victim = Directory()
+            victim.add_role("r", allow=["*:*"])
+            victim.add_agent("bot1", "alice", ["r"])
+            self.assertEqual(victim.authorize(forged, "spend", "anything")[1], "bad signature")
+            with tempfile.TemporaryDirectory() as tmp:
+                p = os.path.join(tmp, "store.json")
+                a, b = Directory(p), Directory(p)
+                self.assertEqual(a.secret, b.secret, "store secret must persist across runs")
+                self.assertNotEqual(a.secret, b"dev-secret")
+        finally:
+            if old is not None:
+                os.environ["AGENT_OKTA_SECRET"] = old
+
+    def test_malformed_tokens_are_rejected_cleanly(self):
+        import base64
+
+        h, _, _ = self.tok.split(".")
+        junk_body = base64.urlsafe_b64encode(b"not json").rstrip(b"=").decode()
+        for bad in ("", "a.b", "a.b.c.d", f"{h}.{junk_body}.sig"):
+            with self.subTest(bad=bad):
+                self.assertFalse(self.d.authorize(bad, "read", "crm/a", now=1001)[0])
+                with self.assertRaises(TokenError):
+                    self.d.revoke(bad)
+        self.assertEqual(self.d.revoked, set())
+
+    def test_revoking_twice_or_after_disable_is_fine(self):
+        self.d.revoke(self.tok)
+        self.d.revoke(self.tok)
+        self.d.disable_agent("bot1")
+        self.d.revoke(self.tok)
+        self.assertEqual(len(self.d.revoked), 1)
+
 
 if __name__ == "__main__":
     unittest.main()

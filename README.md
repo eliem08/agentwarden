@@ -20,12 +20,15 @@ with a full audit trail.
 - **Authorization** — `authorize(token, action, resource, context)` → allow/deny + reason
 - **Audit log** — every decision appended as JSONL
 - File-backed store (`agent-okta.json`) so the CLI is stateful
+- No guessable default key: tokens are signed with `AGENT_OKTA_SECRET` or a random per-store key
+- Spend checks reject `nan`, `inf` and negative amounts, so a limit cannot be slipped
 
 ## Quickstart
 
 ```bash
 pip install -e .
-export AGENT_OKTA_SECRET=change-me
+# optional: without it, a random signing key is created once at agent-okta.json.secret (keep that file private)
+export AGENT_OKTA_SECRET="$(python -c 'import secrets; print(secrets.token_hex(32))')"
 agent-okta role add support-bot --allow "read:crm/*" --allow "write:email/drafts" --deny "read:crm/payroll*"
 agent-okta agent add helpdesk-1 --owner alice@acme.com --role support-bot
 TOKEN=$(agent-okta token issue helpdesk-1 --ttl 900)
