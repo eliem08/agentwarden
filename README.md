@@ -47,7 +47,7 @@ Every plan starts with a 14-day free trial. Prices in USD, billed monthly unless
 | **Business** | $499 per month | Up to 250 agents; Key rotation tooling; Audit export for compliance |
 | **Enterprise** | $2,000 per month | Unlimited agents; SSO and on-prem deployment; Security review support |
 
-To start a trial or buy a plan, email **sales@YOUR-DOMAIN.com**.
+To start a trial or buy a plan, [request access](https://github.com/eliem08/agentwarden/issues/new?title=AgentWarden%20trial&labels=sales).
 
 ## Licence
 
