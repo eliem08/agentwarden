@@ -28,8 +28,11 @@ Every command is also a JSON API endpoint and a browser form, served by the buil
 
 ```bash
 agentwarden-web --port 8000          # then open http://127.0.0.1:8000
-docker build -t agentwarden . && docker run -p 8000:8000 -v agentwarden-data:/data agentwarden
+agentwarden-web keys create --label "first customer"   # prints an API key (stored hashed)
+docker build -t agentwarden . && docker run -p 8000:8000 -e API_KEYS=sk_... -v agentwarden-data:/data agentwarden
 ```
+
+Every API call needs `Authorization: Bearer <key>` once any key exists; a server on a public address refuses to start without one. Calls are rate-limited per key (60/min, `--rate`) and metered: `agentwarden-web usage` prints calls per key for billing.
 
 Endpoints: `POST /api/role-add`, `POST /api/role-list`, `POST /api/agent-add`, `POST /api/agent-disable`, `POST /api/agent-list`, `POST /api/token-issue`, `POST /api/token-revoke`, `POST /api/check`, plus `GET /healthz` and `GET /api/spec` (machine-readable field list).
 Files are sent as `{"name": ..., "content": ...}`, folders as `{"files": [...]}` or a base64 zip.
