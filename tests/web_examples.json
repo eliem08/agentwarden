@@ -1,0 +1,32 @@
+[
+ {
+  "op": "role-add",
+  "payload": {
+   "name": "support",
+   "allow": [
+    "read:crm/*"
+   ],
+   "deny": [
+    "read:crm/payroll*"
+   ]
+  }
+ },
+ {
+  "op": "agent-add",
+  "payload": {
+   "agent_id": "bot1",
+   "owner": "a@x.com",
+   "role": [
+    "support"
+   ]
+  }
+ },
+ {
+  "op": "agent-list",
+  "payload": {}
+ },
+ {
+  "op": "role-list",
+  "payload": {}
+ }
+]

@@ -15,7 +15,7 @@ def _finite_float(s: str) -> float:
     return v
 
 
-def _run(argv=None):
+def build_parser():
     ap = argparse.ArgumentParser(prog="agentwarden", description="Identity and access for AI agents.")
     ap.add_argument("--store", default=os.environ.get("AGENTWARDEN_STORE", "agentwarden.json"))
     sub = ap.add_subparsers(dest="cmd", required=True)
@@ -50,6 +50,11 @@ def _run(argv=None):
     ck.add_argument("resource")
     ck.add_argument("--amount", type=_finite_float)
 
+    return ap
+
+
+def _run(argv=None):
+    ap = build_parser()
     a = ap.parse_args(argv)
     d = Directory(a.store)
 
