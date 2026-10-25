@@ -19,7 +19,7 @@ classifiers = [
 ]
 
 [project.optional-dependencies]
-dev = ["ruff>=0.6"]
+dev = ["ruff==0.15.20"]
 
 [project.scripts]
 agentwarden = "agentwarden.__main__:main"
