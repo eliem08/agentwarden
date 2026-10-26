@@ -37,6 +37,22 @@ Every API call needs `Authorization: Bearer <key>` once any key exists; a server
 Endpoints: `POST /api/role-add`, `POST /api/role-list`, `POST /api/agent-add`, `POST /api/agent-disable`, `POST /api/agent-list`, `POST /api/token-issue`, `POST /api/token-revoke`, `POST /api/check`, plus `GET /healthz` and `GET /api/spec` (machine-readable field list).
 Files are sent as `{"name": ..., "content": ...}`, folders as `{"files": [...]}` or a base64 zip.
 
+## Deploy and sell
+
+[![Deploy to Render](https://render.com/images/deploy-to-render-button.svg)](https://render.com/deploy?repo=https://github.com/eliem08/agentwarden)
+
+`render.yaml` (one click, above) and `fly.toml` (`fly launch --copy-config`) both run the Dockerfile with a persistent `/data` volume and a `/healthz` check.
+To sell self-serve, set four variables and point a Stripe webhook at `https://<your-host>/billing/webhook` (events `checkout.session.completed` and `customer.subscription.deleted`):
+
+| Variable | Example |
+|---|---|
+| `STRIPE_SECRET_KEY` | `sk_live_...` |
+| `STRIPE_WEBHOOK_SECRET` | `whsec_...` |
+| `STRIPE_PRICES` | `team=price_123,business=price_456` |
+| `PUBLIC_URL` | `https://agentwarden.example.com` |
+
+Buyers pick a plan on `/pricing`, pay on Stripe Checkout and see their API key once on the success page. Cancelling the subscription revokes the key. A selling server always requires a key.
+
 ## Pricing
 
 Every plan starts with a 14-day free trial. Prices in USD, billed monthly unless noted.
@@ -80,6 +96,24 @@ TOKEN=$(agentwarden token issue helpdesk-1 --ttl 900)
 agentwarden check "$TOKEN" read crm/tickets/42      # ALLOW
 agentwarden check "$TOKEN" read crm/payroll/2026    # DENY (explicit deny)
 agentwarden check "$TOKEN" send email/outbox        # DENY (no matching grant)
+```
+
+## SDK: gate your agent in one line
+
+The wheel ships a zero-dependency client for a hosted AgentWarden server. It fails closed: a network error,
+bad key or unexpected answer raises instead of allowing.
+
+```python
+from agentwarden.client import AgentWarden, Denied
+
+warden = AgentWarden("https://warden.example.com", api_key="sk_...")
+token = warden.issue_token("support-bot", ttl=900)      # short-lived, scoped to the bot's roles
+
+try:
+    warden.require(token, "spend", "stripe/charges", amount=40)
+    charge_customer()
+except Denied as e:
+    log.warning("blocked: %s", e.reason)
 ```
 
 ## Roadmap

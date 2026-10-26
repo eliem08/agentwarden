@@ -91,7 +91,7 @@ def _run(argv=None):
         ok, reason = d.authorize(a.token, a.action, a.resource, a.amount)
         print(f"{'ALLOW' if ok else 'DENY'}  {reason}")
         d.save()
-        return 0 if ok else 2
+        return 0 if ok else 1  # a deny is an answer, not an error (exit 2 stays for bad input)
     d.save()
     return 0
 
