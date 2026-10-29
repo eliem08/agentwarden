@@ -48,10 +48,10 @@ To sell self-serve, set four variables and point a Stripe webhook at `https://<y
 |---|---|
 | `STRIPE_SECRET_KEY` | `sk_live_...` |
 | `STRIPE_WEBHOOK_SECRET` | `whsec_...` |
-| `STRIPE_PRICES` | `team=price_123,business=price_456` |
+| `STRIPE_PRICES` | `team=price_123,business=price_456,enterprise=price_789` |
 | `PUBLIC_URL` | `https://agentwarden.example.com` |
 
-Buyers pick a plan on `/pricing`, pay on Stripe Checkout and see their API key once on the success page. Cancelling the subscription revokes the key. A selling server always requires a key.
+Buyers pick a plan on `/pricing`, pay on Stripe Checkout and see their API key once on the success page. Cancelling the subscription revokes the key. A selling server always requires a key. Monthly Checkout sessions carry a 14-day free trial. See `.env.example` for the full variable list (names only, no values).
 
 ## Pricing
 
@@ -59,9 +59,14 @@ Every plan starts with a 14-day free trial. Prices in USD, billed monthly unless
 
 | Plan | Price | Includes |
 |---|---|---|
-| **Team** | $99 per month | Up to 25 agents; Roles, deny rules and spend limits; Audit log |
-| **Business** | $499 per month | Up to 250 agents; Key rotation tooling; Audit export for compliance |
-| **Enterprise** | $2,000 per month | Unlimited agents; SSO and on-prem deployment; Security review support |
+| **Team** | $99 per month | Roles, deny rules and spend limits; Audit log |
+| **Business** | $499 per month | Everything in Team |
+| **Enterprise** | $2,000 per month | Everything in Team; Security review support |
+
+All plans unlock the same software in this release — higher tiers add licence scope and
+support, not gated features. Agent-count limits (25 / 250 / unlimited) are licence terms,
+not code-enforced limits: the code caps nothing per plan. Key rotation tooling, audit
+export, SSO and on-prem deployment are Roadmap items, not shipped features.
 
 To start a trial or buy a plan, [request access](https://github.com/eliem08/agentwarden/issues/new?title=AgentWarden%20trial&labels=sales).
 
@@ -122,6 +127,9 @@ except Denied as e:
 - Human-in-the-loop step-up approval for risky scopes
 - SCIM-style sync with your IdP (agent owners = employees)
 - Anomaly detection on the audit stream (see agent-alarm)
+- Key rotation tooling
+- Audit export for compliance
+- SSO and on-prem deployment
 
 ## Development
 
