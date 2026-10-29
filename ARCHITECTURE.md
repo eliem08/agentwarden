@@ -4,7 +4,7 @@
 Identity, credentials and least-privilege authorization for AI agents, with an audit trail.
 **MVP:** file-backed directory (agents, roles, rules), HS256 JWT-style tokens with expiry and
 revocation, allow/deny glob policies with spend caps, JSONL audit log, CLI.
-**Product:** hosted authorization server (OAuth 2.0 token exchange, MCP auth), policy decision
+**Product (roadmap, not shipped):** hosted authorization server (OAuth 2.0 token exchange, MCP auth), policy decision
 point SDKs, step-up human approval, IdP sync.
 
 ## 2. System context
@@ -50,7 +50,9 @@ takes effect immediately, without waiting for token expiry.
 - **Glob scopes over a full policy language (Rego/Cedar).** They're readable by non-engineers.
   Cedar is the planned upgrade once conditions (time, IP, amount ranges) grow.
 
-## 6. Production architecture
+## 6. Future production architecture (not shipped)
+The following is the target architecture, not what ships today. The MVP is the file-backed
+directory, HS256 tokens and JSONL audit log described above.
 - Token service + PDP as a stateless Go/Rust service. Directory in Postgres. Revocations in Redis
   with TTL = token exp.
 - PDP SDKs (Python/TS) cache role definitions with a 30 s TTL and pub/sub invalidation.
